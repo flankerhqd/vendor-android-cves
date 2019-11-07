@@ -1,2 +1,2 @@
-# binder-cves
-Collections of my POCs for binder service CVEs
+# vendor-android-cves
+Collections of my POCs for vendor android CVEs
