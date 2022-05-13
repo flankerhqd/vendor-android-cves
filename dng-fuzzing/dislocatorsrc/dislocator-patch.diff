@@ -1,0 +1,62 @@
+--- libdislocator.so.c	2020-07-02 19:58:01.395194395 +0800
++++ libdislocator64.c	2020-07-02 16:27:30.982911150 +0800
+@@ -25,8 +25,8 @@
+ #include <limits.h>
+ #include <sys/mman.h>
+ 
+-#include "../config.h"
+-#include "../types.h"
++#include "config.h"
++#include "types.h"
+ 
+ #ifndef PAGE_SIZE
+ #  define PAGE_SIZE 4096
+@@ -76,9 +76,9 @@
+            hard_fail,                   /* abort() when max_mem exceeded?   */
+            no_calloc_over;              /* abort() on calloc() overflows?   */
+ 
+-static __thread size_t total_mem;       /* Currently allocated mem          */
++static size_t total_mem;       /* Currently allocated mem          */
+ 
+-static __thread u32 call_depth;         /* To avoid recursion via fprintf() */
++static u32 call_depth;         /* To avoid recursion via fprintf() */
+ 
+ 
+ /* This is the main alloc function. It allocates one page more than necessary,
+@@ -182,6 +182,15 @@
+ void* malloc(size_t len) {
+ 
+   void* ret;
++  
++  //round up for aarch64 8bytes
++  size_t aligned_size = len;
++  aligned_size = ((len + 7LL) & (~7LL));
++
++  if (aligned_size < len) {
++    aligned_size = len;
++  }
++  len = aligned_size;
+ 
+   ret = __dislocator_alloc(len);
+ 
+@@ -231,11 +240,19 @@
+ void* realloc(void* ptr, size_t len) {
+ 
+   void* ret;
++  
++  //round up for aarch64 8bytes
++  size_t aligned_size = len;
++  aligned_size = ((len + 7LL) & (~7LL));
++
++  if (aligned_size < len) {
++    aligned_size = len;
++  }
++  len = aligned_size;
+ 
+   ret = malloc(len);
+ 
+   if (ret && ptr) {
+-
+     if (PTR_C(ptr) != ALLOC_CANARY) FATAL("bad allocator canary on realloc()");
+ 
+     memcpy(ret, ptr, MIN(len, PTR_L(ptr)));
